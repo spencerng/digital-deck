@@ -2,6 +2,9 @@ import spout.*;
 
 boolean DEBUG = true;
 
+// Corner radius
+int corner = 20;
+
 int choice, number;
 
 int transformCompletion = 0;
@@ -27,11 +30,12 @@ int holdFrames = 5;
 
 HashMap < Integer, int[][] > positions;
 
-Spout animSpout;
 PGraphics[] valCanvas;
 Spout[] valSpout;
 
-PGraphics animCanvas;
+PGraphics animCanvas, aggCanvas;
+Spout animSpout, aggSpout;
+
 int trueFrames, trueState;
 
 void setup() {
@@ -66,6 +70,10 @@ void setup() {
 
   animSpout = new Spout(this);
   animSpout.setSenderName("CardMorphAnim");
+  
+  aggCanvas = createGraphics(1280, 720, P3D);
+  aggSpout = new Spout(this);
+  aggSpout.setSenderName("CardAgg");
 
   valCanvas = new PGraphics[10];
   valSpout = new Spout[10];
@@ -94,7 +102,7 @@ ArrayList<PVector> getMorph(ArrayList<PVector> from, ArrayList<PVector> to, floa
   return morph;
 }
 
-void drawMorph(int state, float morphAmount, float scaleFactor, float amountFromCenter, int cardVal, PGraphics canvas) {
+void drawMorph(int state, float morphAmount, float amountFromCenter, int cardVal, PGraphics canvas) {
   int fillColor;
   ArrayList<PVector> morph = getMorph(suits.get(state % 4), suits.get((state + 1) % 4), morphAmount);
   if (state % 4 == 1 || state % 4 == 3) {
@@ -106,10 +114,9 @@ void drawMorph(int state, float morphAmount, float scaleFactor, float amountFrom
   int[][] cardSpaces = Cards.getPositions().get(cardVal);
 
   // Draw relative to center
-  canvas.translate(width / 2, height / 2);
+  
   canvas.strokeWeight(0);
   canvas.fill(fillColor);
-  canvas.scale(scaleFactor);
 
   for (int[] newCoords : cardSpaces) {
     canvas.beginShape();
@@ -132,12 +139,13 @@ void draw() {
   frames += 1;
   trueFrames += 1;
   
+  
   animCanvas.beginDraw();
   if (DEBUG) {
     animCanvas.background(255);
-    animCanvas.strokeWeight(3);
+    //animCanvas.strokeWeight(3);
     animCanvas.noFill();
-    animCanvas.rect(width * 0.1, height * 0.1, width * 0.8, height * 0.8, 10, 10, 10, 10);
+    animCanvas.rect(width, height, width * 0.8, height * 0.8, 10, 10, 10, 10);
   } else {
     animCanvas.clear();
   }
@@ -158,10 +166,42 @@ void draw() {
   for (int i = 0; i < 10; i++) {
     valCanvas[i].beginDraw();
     valCanvas[i].clear();
-    drawMorph(trueState, Math.min(trueFrames / morphFrames, 1.0), 0.5, 1.0, i + 1, valCanvas[i]);
+    valCanvas[i].fill(255);
+    valCanvas[i].rect(0, 0, width, height, corner, corner, corner, corner);
+    valCanvas[i].noFill();
+    valCanvas[i].translate(550 / 2, 770 / 2);
+    valCanvas[i].scale(0.5);
+    drawMorph(trueState, Math.min(trueFrames / morphFrames, 1.0), 1.0, i + 1, valCanvas[i]);
     valCanvas[i].endDraw();
     valSpout[i].sendTexture(valCanvas[i]);
   }
+  
+  aggCanvas.beginDraw();
+  aggCanvas.clear();
+  aggCanvas.translate(550 / 2, 770 / 2);
+  aggCanvas.scale(0.5);
+  for (int i = 0; i < 10; i++) {
+    int yTranslate = 0, xTranslate = 0;
+    if (i == 9 || i == 4) {
+      yTranslate = (height + 50);
+      if (i == 4) {
+        xTranslate = -550 * 4;
+      } else {
+        xTranslate = -550 * 4 - 50;
+      }
+    } else  {
+      xTranslate = 550;
+    }
+    aggCanvas.translate(xTranslate , yTranslate);
+    
+    
+    aggCanvas.fill(255);
+    aggCanvas.rect(0, 0, 550 * 1.5, 770 * 1.5, corner, corner, corner, corner);
+    aggCanvas.noFill();
+    drawMorph(trueState, Math.min(trueFrames / morphFrames, 1.0), 1.0, i + 1, aggCanvas);
+  }
+  aggCanvas.endDraw();
+  aggSpout.sendTexture(aggCanvas);
 
   if (choseSuit || (state > 20 && state % 4 == choice)) {
     morphFrames = 30.0;
@@ -178,7 +218,9 @@ void draw() {
     transformCompletion += 2;
   }
 
-  drawMorph(state, Math.min(frames / morphFrames, 1.0), scaleFactor / 100.0, transformCompletion / 100.0, valueToDraw, animCanvas);
+  animCanvas.translate(550 / 2, 770 / 2);
+  animCanvas.scale(scaleFactor / 100.0);
+  drawMorph(state, Math.min(frames / morphFrames, 1.0), transformCompletion / 100.0, valueToDraw, animCanvas);
 
   animCanvas.endDraw();
   animSpout.sendTexture(animCanvas);
