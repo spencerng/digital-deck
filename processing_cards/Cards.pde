@@ -1,5 +1,4 @@
-
-  public static HashMap <Integer, int[][]> getPositions() {
+static HashMap <Integer, int[][]> getPositions() {
     HashMap < Integer, int[][] > positions = new HashMap < > ();
     positions.put(1, new int[][] {
       {
@@ -128,7 +127,7 @@
         -450,
         0
       }, {-200,
-        -450,
+        450,
         180
       }, {
         200,
@@ -147,7 +146,7 @@
         0
       }, {
         0,
-        -250,
+        250,
         180
       },
       });
