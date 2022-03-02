@@ -1,3 +1,4 @@
+
 static HashMap <Integer, int[][]> getPositions() {
     HashMap < Integer, int[][] > positions = new HashMap < > ();
     positions.put(1, new int[][] {

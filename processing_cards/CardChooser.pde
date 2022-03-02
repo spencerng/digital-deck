@@ -1,4 +1,6 @@
 import spout.*;
+import netP5.*;
+import oscP5.*;
 
 boolean DEBUG = true;
 
@@ -26,7 +28,7 @@ int priorColor = 0;
 
 int numPoints = 60;
 float morphFrames = 30.0;
-int holdFrames = 5;
+int holdFrames = 20;
 
 HashMap < Integer, int[][] > positions;
 
@@ -37,8 +39,20 @@ PGraphics animCanvas, aggCanvas;
 Spout animSpout, aggSpout;
 
 int trueFrames, trueState;
+String limitMorph = "";
+
+OscP5 oscP5;
+
+void oscEvent(OscMessage msg) {
+   if (msg.checkAddrPattern("/deck/limit_morph")) {
+       limitMorph = msg.get(0).stringValue();
+   }
+}
+
 
 void setup() {
+  oscP5 = new OscP5(this, 5005);
+  
   size(550, 770, P3D);
   animCanvas = createGraphics(550, 770, P3D);
 
@@ -83,7 +97,8 @@ void setup() {
     valSpout[i] = new Spout(this);
     valSpout[i].setSenderName("MorphCard" + (i + 1));
   }
-  frameRate(30);
+  
+  frameRate(60);
 }
 
 ArrayList<PVector> getMorph(ArrayList<PVector> from, ArrayList<PVector> to, float amount) {
@@ -104,11 +119,21 @@ ArrayList<PVector> getMorph(ArrayList<PVector> from, ArrayList<PVector> to, floa
 
 void drawMorph(int state, float morphAmount, float amountFromCenter, int cardVal, PGraphics canvas) {
   int fillColor;
-  ArrayList<PVector> morph = getMorph(suits.get(state % 4), suits.get((state + 1) % 4), morphAmount);
-  if (state % 4 == 1 || state % 4 == 3) {
-    fillColor = lerpColor(color(209, 45, 54), color(0, 0, 0), morphAmount);
+  ArrayList<PVector> morph;
+  if (!beforeSingleColorMorph()) {
+     morph = getMorph(suits.get(state % 4), suits.get((state + 2) % 4), morphAmount);
+    if (limitMorph.equals("red")) {
+      fillColor = color(209, 45, 54);
+    } else {
+      fillColor = color(0,0, 0); 
+    }
   } else {
-    fillColor = lerpColor(color(0, 0, 0), color(209, 45, 54), morphAmount);
+    morph = getMorph(suits.get(state % 4), suits.get((state + 1) % 4), morphAmount);
+    if (state % 4 == 1 || state % 4 == 3) {
+      fillColor = lerpColor(color(209, 45, 54), color(0, 0, 0), morphAmount);
+    } else {
+      fillColor = lerpColor(color(0, 0, 0), color(209, 45, 54), morphAmount);
+    }
   }
 
   int[][] cardSpaces = Cards.getPositions().get(cardVal);
@@ -135,6 +160,11 @@ void drawMorph(int state, float morphAmount, float amountFromCenter, int cardVal
   }
 }
 
+boolean beforeSingleColorMorph() {
+  return limitMorph.length() == 0 || (limitMorph.equals("red") && state % 2 == 0) || 
+      (limitMorph.equals("black") && state % 2 == 1);
+}
+
 void draw() {
   frames += 1;
   trueFrames += 1;
@@ -159,8 +189,14 @@ void draw() {
   if (trueFrames >= morphFrames + holdFrames) {
     frames = 0;
     trueFrames = 0;
-    state += 1;
-    trueState += 1;
+    
+    if (beforeSingleColorMorph()) {
+      state += 1;
+      trueState += 1;
+    } else {
+     state += 2;
+     trueState += 2; 
+    }
   }
 
   for (int i = 0; i < 10; i++) {
@@ -178,27 +214,41 @@ void draw() {
   
   aggCanvas.beginDraw();
   aggCanvas.clear();
-  aggCanvas.translate(550 / 2, 770 / 2);
-  aggCanvas.scale(0.5);
+  aggCanvas.scale(0.28);
+  aggCanvas.translate(380, 100);
+  int xTrans = 550 + 200;
+  int xShift = 500;
+  int yTrans = 770 + 25;
+  int[][] translateFactors = {
+      {xShift, 0},
+      {xTrans + xShift, 0},
+      {xTrans * 2 + xShift, 0},
+      {xTrans * 3 + xShift, 0},
+      {0, yTrans},
+      {xTrans, yTrans},
+      {xTrans * 2, yTrans},
+      {xTrans * 3, yTrans},
+      {xTrans * 4, yTrans},
+      {xShift, yTrans * 2},
+      {xTrans + xShift, yTrans * 2},
+      {xTrans * 2 + xShift, yTrans * 2},
+      {xTrans * 3 + xShift, yTrans * 2}
+    };
+    
   for (int i = 0; i < 10; i++) {
-    int yTranslate = 0, xTranslate = 0;
-    if (i == 9 || i == 4) {
-      yTranslate = (height + 50);
-      if (i == 4) {
-        xTranslate = -550 * 4;
-      } else {
-        xTranslate = -550 * 4 - 50;
-      }
-    } else  {
-      xTranslate = 550;
-    }
-    aggCanvas.translate(xTranslate , yTranslate);
+    
+    aggCanvas.translate(translateFactors[i][0] , translateFactors[i][1]);
     
     
     aggCanvas.fill(255);
-    aggCanvas.rect(0, 0, 550 * 1.5, 770 * 1.5, corner, corner, corner, corner);
+    aggCanvas.rect(0, 0, 550, 770, corner, corner, corner, corner);
     aggCanvas.noFill();
+    aggCanvas.translate(550 / 2, 770 / 2);
+    aggCanvas.scale(0.5);
     drawMorph(trueState, Math.min(trueFrames / morphFrames, 1.0), 1.0, i + 1, aggCanvas);
+    aggCanvas.scale(2);
+    aggCanvas.translate(-550 / 2, -770 / 2);
+    aggCanvas.translate(-translateFactors[i][0] , -translateFactors[i][1]);
   }
   aggCanvas.endDraw();
   aggSpout.sendTexture(aggCanvas);
