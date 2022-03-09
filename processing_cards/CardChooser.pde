@@ -28,7 +28,7 @@ int priorColor = 0;
 
 int numPoints = 60;
 float morphFrames = 30.0;
-int holdFrames = 20;
+int holdFrames = 30;
 
 HashMap < Integer, int[][] > positions;
 
@@ -46,15 +46,23 @@ OscP5 oscP5;
 void oscEvent(OscMessage msg) {
    if (msg.checkAddrPattern("/deck/limit_morph")) {
        limitMorph = msg.get(0).stringValue();
+       println("Limiting morph to " + limitMorph + " cards");
    }
 }
 
+PImage[] courtCards;
+PFont cardFont;
 
 void setup() {
   oscP5 = new OscP5(this, 5005);
   
   size(550, 770, P3D);
   animCanvas = createGraphics(550, 770, P3D);
+  
+  courtCards = new PImage[] {loadImage("no_pip_jack.png"), 
+    loadImage("no_pip_queen.png"), 
+    loadImage("no_pip_king.png")};
+  cardFont = createFont("card_font.ttf", 128);
 
   textureMode(NORMAL);
   positions = Cards.getPositions();
@@ -89,10 +97,10 @@ void setup() {
   aggSpout = new Spout(this);
   aggSpout.setSenderName("CardAgg");
 
-  valCanvas = new PGraphics[10];
-  valSpout = new Spout[10];
+  valCanvas = new PGraphics[13];
+  valSpout = new Spout[13];
 
-  for (int i = 0; i < 10; i++) {
+  for (int i = 0; i < 13; i++) {
     valCanvas[i] = createGraphics(550, 770, P3D);
     valSpout[i] = new Spout(this);
     valSpout[i].setSenderName("MorphCard" + (i + 1));
@@ -117,26 +125,37 @@ ArrayList<PVector> getMorph(ArrayList<PVector> from, ArrayList<PVector> to, floa
   return morph;
 }
 
-void drawMorph(int state, float morphAmount, float amountFromCenter, int cardVal, PGraphics canvas) {
+void drawMorph(int suit, float morphAmount, float amountFromCenter, int cardVal, PGraphics canvas, boolean singleMorph) {
   int fillColor;
   ArrayList<PVector> morph;
-  if (!beforeSingleColorMorph()) {
-     morph = getMorph(suits.get(state % 4), suits.get((state + 2) % 4), morphAmount);
+  if (singleMorph) {
+     morph = getMorph(suits.get(suit % 4), suits.get((suit + 2) % 4), morphAmount);
     if (limitMorph.equals("red")) {
       fillColor = color(209, 45, 54);
     } else {
       fillColor = color(0,0, 0); 
     }
   } else {
-    morph = getMorph(suits.get(state % 4), suits.get((state + 1) % 4), morphAmount);
-    if (state % 4 == 1 || state % 4 == 3) {
+    morph = getMorph(suits.get(suit % 4), suits.get((suit + 1) % 4), morphAmount);
+    if (state % 2 == 1) {
       fillColor = lerpColor(color(209, 45, 54), color(0, 0, 0), morphAmount);
     } else {
       fillColor = lerpColor(color(0, 0, 0), color(209, 45, 54), morphAmount);
     }
   }
+  
+  int[][] cardSpaces;
+  
+  if (cardVal >= 11) {
+    canvas.translate(-550, -770);
+    canvas.image(courtCards[cardVal - 11], 20, 30, 550 * 2, 770 * 2);
+    canvas.translate(550, 770);
+    cardSpaces = new int[][] {{-225, -450, 0}, {240, 450, 180}};
+  } else {
+    cardSpaces = Cards.getPositions().get(cardVal);
+  }
 
-  int[][] cardSpaces = Cards.getPositions().get(cardVal);
+  
 
   // Draw relative to center
   
@@ -170,6 +189,9 @@ void draw() {
   trueFrames += 1;
   
   
+  boolean singleMorph = !beforeSingleColorMorph();
+  
+  
   animCanvas.beginDraw();
   if (DEBUG) {
     animCanvas.background(255);
@@ -182,6 +204,7 @@ void draw() {
 
   if (state < 20 && state > 4) {
     morphFrames -= 0.05;
+    morphFrames = Math.max(5, morphFrames);
   }
 
   int valueToDraw = number;
@@ -190,7 +213,7 @@ void draw() {
     frames = 0;
     trueFrames = 0;
     
-    if (beforeSingleColorMorph()) {
+    if (!singleMorph) {
       state += 1;
       trueState += 1;
     } else {
@@ -199,7 +222,7 @@ void draw() {
     }
   }
 
-  for (int i = 0; i < 10; i++) {
+  for (int i = 0; i < 13; i++) {
     valCanvas[i].beginDraw();
     valCanvas[i].clear();
     valCanvas[i].fill(255);
@@ -207,7 +230,7 @@ void draw() {
     valCanvas[i].noFill();
     valCanvas[i].translate(550 / 2, 770 / 2);
     valCanvas[i].scale(0.5);
-    drawMorph(trueState, Math.min(trueFrames / morphFrames, 1.0), 1.0, i + 1, valCanvas[i]);
+    drawMorph(trueState, Math.min(trueFrames / morphFrames, 1.0), 1.0, i + 1, valCanvas[i], singleMorph);
     valCanvas[i].endDraw();
     valSpout[i].sendTexture(valCanvas[i]);
   }
@@ -235,17 +258,15 @@ void draw() {
       {xTrans * 3 + xShift, yTrans * 2}
     };
     
-  for (int i = 0; i < 10; i++) {
-    
+  for (int i = 0; i < 13; i++) {
     aggCanvas.translate(translateFactors[i][0] , translateFactors[i][1]);
-    
     
     aggCanvas.fill(255);
     aggCanvas.rect(0, 0, 550, 770, corner, corner, corner, corner);
     aggCanvas.noFill();
     aggCanvas.translate(550 / 2, 770 / 2);
     aggCanvas.scale(0.5);
-    drawMorph(trueState, Math.min(trueFrames / morphFrames, 1.0), 1.0, i + 1, aggCanvas);
+    drawMorph(trueState, Math.min(trueFrames / morphFrames, 1.0), 1.0, i + 1, aggCanvas, singleMorph);
     aggCanvas.scale(2);
     aggCanvas.translate(-550 / 2, -770 / 2);
     aggCanvas.translate(-translateFactors[i][0] , -translateFactors[i][1]);
@@ -270,7 +291,7 @@ void draw() {
 
   animCanvas.translate(550 / 2, 770 / 2);
   animCanvas.scale(scaleFactor / 100.0);
-  drawMorph(state, Math.min(frames / morphFrames, 1.0), transformCompletion / 100.0, valueToDraw, animCanvas);
+  drawMorph(state, Math.min(frames / morphFrames, 1.0), transformCompletion / 100.0, valueToDraw, animCanvas, singleMorph);
 
   animCanvas.endDraw();
   animSpout.sendTexture(animCanvas);

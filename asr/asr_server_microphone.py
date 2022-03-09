@@ -46,11 +46,14 @@ async def recognize_loop():
                     partial = json.loads(result_partial)["partial"]
                     print(partial)
 
-                    if "get rid" in partial:
-                        if "red" in partial:
-                            client.send_message("/deck/limit_morph", "black")
-                        elif "black" in partial:
-                            client.send_message("/deck/limit_morph", "red")
+                    send_messages(partial)
+
+def send_messages(text):
+    if "get rid" in text:
+        if "red" in text:
+            client.send_message("/deck/limit_morph", "black")
+        elif "black" in text:
+            client.send_message("/deck/limit_morph", "red")
 
 
 
@@ -83,6 +86,7 @@ async def main():
     
 
     client = udp_client.SimpleUDPClient("127.0.0.1", 5005)
+    client.send_message("/deck/limit_morph", "red")
 
     loop = asyncio.get_event_loop()
     
