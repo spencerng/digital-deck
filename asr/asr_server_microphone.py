@@ -60,7 +60,7 @@ def send_messages(text):
         if "red" in text or "records" in text or "record" in text:
             client.send_message("/deck/limit_morph", "black")
             client.send_message("/deck/state", 3)
-        elif "black" in text or "boy" in text:
+        elif "black" in text or "boy" in text or "white" in text or "bike" in text:
             client.send_message("/deck/limit_morph", "red")
             client.send_message("/deck/state", 3)
         elif "world" in text or "words" in text or "heart" in text:
