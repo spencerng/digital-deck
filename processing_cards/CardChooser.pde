@@ -153,7 +153,7 @@ void drawMorph(int suit, float morphAmount, float amountFromCenter, int cardVal,
   ArrayList<PVector> morph;
   if (singleMorph) {
      morph = getMorph(suits.get(suit % 4), suits.get((suit + 2) % 4), morphAmount);
-    if (limitMorph.equals("red")) {
+    if (limitMorph.equals("red") || limitMorph.equals("diamonds") || limitMorph.equals("hearts")) {
       fillColor = color(209, 45, 54);
     } else {
       fillColor = color(0,0, 0); 
@@ -173,7 +173,6 @@ void drawMorph(int suit, float morphAmount, float amountFromCenter, int cardVal,
   if (cardVal >= 11) {
     canvas.translate(-550, -770);
     canvas.image(courtCards[cardVal - 11], 20, 30, 550 * 2, 770 * 2);
-    canvas.tint(0, 255 - opacity);
     canvas.translate(550, 770);
     cardSpaces = new int[][] {{-225, -450, 0}, {240, 450, 180}};
   } else {
@@ -189,7 +188,7 @@ void drawMorph(int suit, float morphAmount, float amountFromCenter, int cardVal,
   String[] index = new String[] {"A", "2", "3", "4", "5", "6", "7", "8", "9", "=", "J", "Q", "K"};
   canvas.text(index[cardVal - 1], -475, -520);
   canvas.rotate(radians(180));
-  canvas.text(index[cardVal - 1], -490, -520);
+  canvas.text(index[cardVal - 1], -500, -520);
   canvas.rotate(radians(180));
 
   for (int[] newCoords : cardSpaces) {
@@ -207,6 +206,7 @@ void drawMorph(int suit, float morphAmount, float amountFromCenter, int cardVal,
     canvas.rotate(radians(-newCoords[2]* amountFromCenter));
     canvas.translate(-(newCoords[0] * amountFromCenter), -(newCoords[1] * amountFromCenter));
   }
+  canvas.tint(255, opacity);
 }
 
 boolean beforeSingleColorMorph() {
@@ -233,8 +233,8 @@ void draw() {
     float tintAmount =  Math.max(0, 255 - (frames - routineStartFrame) / 100.0 * 255);
     boxCanvas.beginDraw();
     boxCanvas.clear();
-    boxCanvas.image(boxImage, 0, 0);
-    boxCanvas.tint(0, tintAmount);
+    boxCanvas.image(boxImage, 0, 0, 1600, 1283);
+    boxCanvas.tint(255, 255 - tintAmount);
     boxCanvas.endDraw();
     boxSpout.sendTexture(boxCanvas);
     
@@ -283,6 +283,8 @@ void draw() {
         // Begin fading out cards
         if ((keepOnly.equals("low") && i > 3) || (keepOnly.equals("middle") && (i < 4 || i > 8)) || (keepOnly.equals("high") && i < 9)) {
           opacity =  Math.max(0, 255 - (frames - routineStartFrame) / 100.0 * 255);
+        } else {
+           opacity = 255; 
         }
       }
       valCanvas[i].fill(255, opacity);
@@ -321,25 +323,26 @@ void draw() {
       // Crossfade = 10 frames
       // Hold = 50 frames
       val = baseVal + ((frames / 60) % range);
-      nextVal = (baseVal + (frames / 60) + 1) % range;
+      nextVal = baseVal + ((frames / 60) + 1) % range;
       
       if (frames % 60 > 50) {
-        cardOpacity = 255 - (frames % 60 - 50) / 10.0 * 255;
-        nextOpacity = (frames % 60 - 50) / 10.0 * 255;
-        
-        boxCanvas.beginDraw();
-        boxCanvas.clear();
-        boxCanvas.image(boxImage, 0, 0);
-        boxCanvas.tint(0, 255 - cardOpacity);
-        boxCanvas.endDraw();
-        boxSpout.sendTexture(boxCanvas);
+        opacity = 255 - (frames % 60 - 50) / 12.0 * 255;
+        nextOpacity = (frames % 60 - 50) / 12.0 * 255;
       }
     } else {
       val = chosenVal;
       nextVal = chosenVal;
+      opacity =  255;
       if (routineState == 7) {
         cardOpacity = Math.max(0, 255 - (frames - routineStartFrame) / 100.0 * 255);
         opacity = Math.max(0, 255 - (frames - routineStartFrame) / 100.0 * 255);
+        
+        boxCanvas.beginDraw();
+        boxCanvas.clear();
+        boxCanvas.image(boxImage, 0, 0);
+        boxCanvas.tint(255, cardOpacity);
+        boxCanvas.endDraw();
+        boxSpout.sendTexture(boxCanvas);
       }
       nextOpacity = 0;
     }
@@ -349,19 +352,23 @@ void draw() {
       valCanvas[i].clear();
       
       if (i == 6) {
-        valCanvas[i].fill(255, cardOpacity);
+        if (routineState == 5 || routineState == 6) {
+          valCanvas[i].fill(255);  
+        } else if (routineState == 7) {
+          valCanvas[i].fill(255, cardOpacity);  
+        }
+        
         valCanvas[i].rect(0, 0, width, height, corner, corner, corner, corner);
         valCanvas[i].noFill();
         valCanvas[i].translate(550 / 2, 770 / 2);
         valCanvas[i].scale(0.5);
         
-        valCanvas[i].beginDraw();
-        valCanvas[i].clear();
+        
         drawMorph(state, 0, 1.0, val, valCanvas[i], true, opacity);
         drawMorph(state, 0, 1.0, nextVal, valCanvas[i], true, nextOpacity);
       }
       valCanvas[i].endDraw();
-      valSpout[i].sendTexture(valCanvas[6]);
+      valSpout[i].sendTexture(valCanvas[i]);
     }
     
   } 
