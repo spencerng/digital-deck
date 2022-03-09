@@ -39,7 +39,7 @@ async def recognize_loop():
             if rec.AcceptWaveform(data):
                 result = rec.Result()
                 final_text = json.loads(result)["text"]
-                print(final_text)
+                send_messages(final_text)
             else:
                 result_partial = rec.PartialResult()
                 if len(result_partial) > 20:
@@ -49,12 +49,89 @@ async def recognize_loop():
                     send_messages(partial)
 
 def send_messages(text):
-    if "get rid" in text:
-        if "red" in text:
+    if "imagine" in text:
+        if "fifty" in text:
+            client.send_message("/deck/state", 3)
+        elif ("deck" in text):
+            client.send_message("/deck/state", 1)
+    elif "blue deck of playing cards" in text:
+        client.send_message("/deck/state", 2)
+    elif "get rid" in text or "care of" in text or "giver of" in text or "get real" in text or "given the" in text:
+        if "red" in text or "records" in text or "record" in text:
             client.send_message("/deck/limit_morph", "black")
-        elif "black" in text:
+            client.send_message("/deck/state", 3)
+        elif "black" in text or "boy" in text:
             client.send_message("/deck/limit_morph", "red")
+            client.send_message("/deck/state", 3)
+        elif "world" in text or "words" in text or "heart" in text:
+            client.send_message("/deck/limit_morph", "diamonds")
+            client.send_message("/deck/state", 3)
+        elif "diamond" in text:
+            client.send_message("/deck/limit_morph", "hearts")
+            client.send_message("/deck/state", 3)
+        elif "spade" in text or "speed" in text or "space" in text:
+            client.send_message("/deck/limit_morph", "clubs")
+            client.send_message("/deck/state", 3)
+        elif "club" in text:
+            client.send_message("/deck/limit_morph", "spades")
+            client.send_message("/deck/state", 3)
+    elif "let's keep" in text or "what's keep" in text or "what's he" in text or "of people" in text or "what's keyboard" in text:
+        if "high" in text:
+            client.send_message("/deck/state", 4)
+            client.send_message("/deck/keep_only", "high")
+        elif "low" in text or "local" in text: 
+            client.send_message("/deck/state", 4)
+            client.send_message("/deck/keep_only", "low")
+        elif "middle" in text: 
+            client.send_message("/deck/state", 4)
+            client.send_message("/deck/keep_only", "middle")
+    elif "flock" in text or "flux" in text:
+        client.send_message("/deck/state", 5)
+    elif "conjure up" in text or "contract" in text:
+        if "is" in text or "ace" in text or "days" in text:
+            client.send_message("/deck/state", 6)
+            client.send_message("/deck/chosen_value", 1)
+        elif "two" in text or "too" in text or "to" in text:
+            client.send_message("/deck/state", 6)
+            client.send_message("/deck/chosen_value", 2)
+        elif "three" in text:
+            client.send_message("/deck/state", 6)
+            client.send_message("/deck/chosen_value", 3)
+        elif "four" in text or "for" in text:
+            client.send_message("/deck/state", 6)
+            client.send_message("/deck/chosen_value", 4)
+            
+        elif "five" in text:
+            client.send_message("/deck/state", 6)
+            client.send_message("/deck/chosen_value", 5)
+        elif "six" in text:
+            client.send_message("/deck/state", 6)
+            client.send_message("/deck/chosen_value", 6)
+        elif "seven" in text or "southern" in text:
+            client.send_message("/deck/state", 6)
+            client.send_message("/deck/chosen_value", 7)
+        elif "eat" in text or "eight" in text:
+            client.send_message("/deck/state", 6)
+            client.send_message("/deck/chosen_value", 8)
+        elif "nine" in text or "line" in text:
+            client.send_message("/deck/state", 6)
+            client.send_message("/deck/chosen_value", 9)
+        elif "top" in text or "ten" in text:
+            client.send_message("/deck/state", 6)
+            client.send_message("/deck/chosen_value", 10)
+        elif "jack" in text:
+            client.send_message("/deck/state", 6)
+            client.send_message("/deck/chosen_value", 11)
+        elif "queen" in text or "quit" in text:
+            client.send_message("/deck/state", 6)
+            client.send_message("/deck/chosen_value", 12)
+        elif "king" in text:
+            client.send_message("/deck/state", 6)
+            client.send_message("/deck/chosen_value", 13)
+    elif "insert" in text:
+        client.send_message("/deck/state", 7)
 
+            
 
 
 async def main():
@@ -86,7 +163,6 @@ async def main():
     
 
     client = udp_client.SimpleUDPClient("127.0.0.1", 5005)
-    client.send_message("/deck/limit_morph", "red")
 
     loop = asyncio.get_event_loop()
     
