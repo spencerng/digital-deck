@@ -4,7 +4,7 @@ A projection mapping take on the Invisible Deck magic routine
 
 Powered by vosk, Processing, TouchDesigner, and a bit of Spout and OSC
 
-![Card Gif](https://i.giphy.com/media/3vhqF2Sov81UXpgqIj/giphy-downsized-large.gif)
+![Card Gif](assets/card_morph.gif)
 
 ## Setup
 
